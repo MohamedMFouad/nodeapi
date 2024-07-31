@@ -15,7 +15,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM', branches: [[name: '*/main']],
-                          userRemoteConfigs: [[url: 'https://github.com/amarthakur0/nodejs-api-template']]])
+                          userRemoteConfigs: [[url: 'https://github.com/MohamedMFouad/nodeapi']]])
             }
         }
 
