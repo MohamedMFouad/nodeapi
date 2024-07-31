@@ -3,8 +3,9 @@ pipeline {
 
     environment {
         REGISTRY = "your-docker-registry" // e.g., your Docker Hub username or registry URL
-        IMAGE_NAME = "nodejs-api-template"
+        IMAGE_NAME = "nodeapi"
         REGISTRY_CREDENTIALS = 'docker-hub-credentials' // Jenkins credential ID for Docker registry
+        GIT_CREDENTIALS = 'github-credentials' // Jenkins credential ID for GitHub
         AZURE_CREDENTIALS = 'azure-credentials' // Jenkins credential ID for Azure
         RESOURCE_GROUP = 'your-azure-resource-group'
         AKS_CLUSTER = 'your-aks-cluster'
@@ -14,8 +15,11 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']],
-                          userRemoteConfigs: [[url: 'https://github.com/MohamedMFouad/nodeapi']]])
+                script {
+                    checkout([$class: 'GitSCM', branches: [[name: '*/main']],
+                              userRemoteConfigs: [[url: 'https://github.com/MohamedMFouad/nodeapi',
+                                                   credentialsId: GIT_CREDENTIALS]]])
+                }
             }
         }
 
