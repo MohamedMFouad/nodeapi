@@ -1,20 +1,23 @@
-# Use Node.js as the base image
+# Use an official Node.js runtime as a parent image
 FROM node:14
 
-# Create and set the working directory
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the application code
+# Copy the rest of the application code to the working directory
 COPY . .
 
 # Expose the application port
 EXPOSE 3000
+
+# Define environment variables (if any)
+ENV NODE_ENV=production
 
 # Start the application
 CMD ["npm", "start"]
