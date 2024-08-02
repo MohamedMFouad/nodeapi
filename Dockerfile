@@ -23,7 +23,7 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Copy environment configuration file (optional)
-COPY .env ./  # Replace with your environment file name if different
+# COPY .env ./  # Replace with your environment file name if different
 
 # Expose port (adjust if needed)
 EXPOSE 3000
