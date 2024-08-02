@@ -1,21 +1,15 @@
-FROM node:10-alpine
+FROM node:14
 
-RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf
+# Create app directory
+WORKDIR /usr/src/app
 
-
-RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
-
-
-WORKDIR /home/node/app
-
+# Install app dependencies
 COPY package*.json ./
 
-USER node
+RUN npm install
 
-RUN npm install && npm audit fix
-
-COPY --chown=node:node . .
+# Bundle app source
+COPY . .
 
 EXPOSE 3000
-
-CMD [ "node", "index.js" ]
+CMD [ "node", "app.js" ]
