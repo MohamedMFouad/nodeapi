@@ -1,23 +1,21 @@
-# Use an official Node.js runtime as a parent image
-FROM node:14
+FROM node:10-alpine
 
-# Set the working directory
-WORKDIR /usr/src/app
+RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
-# Copy package.json and package-lock.json to the working directory
+
+RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
+
+
+WORKDIR /home/node/app
+
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+USER node
 
-# Copy the rest of the application code to the working directory
-COPY . .
+RUN npm install && npm audit fix
 
-# Expose the application port
+COPY --chown=node:node . .
+
 EXPOSE 3000
 
-# Define environment variables (if any)
-ENV NODE_ENV=production
-
-# Start the application
-CMD ["npm", "start"]
+CMD [ "node", "index.js" ]
