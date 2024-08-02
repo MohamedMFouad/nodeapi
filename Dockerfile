@@ -1,15 +1,35 @@
-FROM node:14
+# Use a minimal base image for efficiency
+FROM node:18-alpine AS builder
 
-# Create app directory
-WORKDIR /usr/src/app
+# Set working directory
+WORKDIR /app
 
-# Install app dependencies
+# Copy package.json for dependency installation
 COPY package*.json ./
 
+# Install dependencies
 RUN npm install
 
-# Bundle app source
+# Copy all remaining application files
 COPY . .
 
+# Build step (if applicable)
+# RUN npm run build  # Replace with your build command if necessary
+
+# Switch to a smaller runtime image
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy environment configuration file (optional)
+COPY .env ./  # Replace with your environment file name if different
+
+# Expose port (adjust if needed)
 EXPOSE 3000
-CMD [ "node", "app.js" ]
+
+# Load environment variables from file (optional)
+ENV $(cat .env)  # Replace with your environment file name if different
+
+# Start the application
+CMD [ "node", "index.js" ]
