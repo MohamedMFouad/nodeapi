@@ -12,7 +12,7 @@ Requirements
 
 1.  **CI/CD Pipeline**: A Jenkins pipeline that:
 
-    -   Pulls code from [GitHub repository](https://github.com/amarthakur0/nodejs-api-template)
+    -   Pulls code from [GitHub repository] 
     -   Runs unit tests
     -   Packages the application into a Docker container
     -   Pushes the container to a registry
