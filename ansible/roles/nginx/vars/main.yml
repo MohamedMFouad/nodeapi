@@ -1,0 +1,5 @@
+---
+# vars file for nginx
+# Default variables for the nginx role
+domain_name: node.duckdns.org
+app_port: 3000

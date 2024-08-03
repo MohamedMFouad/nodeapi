@@ -1,0 +1,8 @@
+---
+- name: Set up Nginx with Let's Encrypt
+  hosts: node
+  become: yes
+  roles:
+    - nginx
+    - letsencrypt
+    - firewall
