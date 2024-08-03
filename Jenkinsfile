@@ -2,78 +2,77 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = "your-docker-registry" // e.g., your Docker Hub username or registry URL
-        IMAGE_NAME = "nodeapi"
-        REGISTRY_CREDENTIALS = 'docker-hub-credentials' // Jenkins credential ID for Docker registry
-        GIT_CREDENTIALS = 'github-credentials' // Jenkins credential ID for GitHub
-        AZURE_CREDENTIALS = 'azure-credentials' // Jenkins credential ID for Azure
-        RESOURCE_GROUP = 'your-azure-resource-group'
-        AKS_CLUSTER = 'your-aks-cluster'
-        NAMESPACE = 'default' // Kubernetes namespace
+        NPM_CONFIG_PREFIX = "/var/jenkins_home/npm-global"
+        PATH = "/var/jenkins_home/npm-global/bin:$PATH"
+        DOCKER_IMAGE = "myregistry.azurecr.io/nodejs-api:${env.BUILD_NUMBER}"
+        AZURE_CREDENTIALS = credentials('azure-credentials')
+        ACR_CREDENTIALS = credentials('acr-credentials')
     }
+
 
     stages {
         stage('Checkout') {
             steps {
-                script {
-                    checkout([$class: 'GitSCM', branches: [[name: '*/main']],
-                              userRemoteConfigs: [[url: 'https://github.com/MohamedMFouad/nodeapi',
-                                                   credentialsId: GIT_CREDENTIALS]]])
-                }
+                git 'https://github.com/MohamedMFouad/nodeapi'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Run Tests') {
             steps {
-                script {
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Run Unit Tests') {
-            steps {
-                script {
-                    sh 'npm test'
-                }
+                sh 'npm install'
+               
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t ${REGISTRY}/${IMAGE_NAME}:${env.BUILD_NUMBER} ."
+                    docker.build(DOCKER_IMAGE)
                 }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push to Registry') {
             steps {
                 script {
-                    docker.withRegistry('', "${REGISTRY_CREDENTIALS}") {
-                        sh "docker push ${REGISTRY}/${IMAGE_NAME}:${env.BUILD_NUMBER}"
+                    docker.withRegistry('https://nodeapi.azurecr.io', 'acr-credentials') {
+                        docker.image(DOCKER_IMAGE).push()
                     }
                 }
             }
         }
 
-        stage('Deploy to Azure AKS') {
-            steps {
-                script {
-                    withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS)]) {
-                        sh '''
-                        az aks get-credentials --resource-group ${RESOURCE_GROUP} --name ${AKS_CLUSTER}
-                        kubectl set image deployment/${IMAGE_NAME} ${IMAGE_NAME}=${REGISTRY}/${IMAGE_NAME}:${env.BUILD_NUMBER} -n ${NAMESPACE}
-                        '''
-                    }
-                }
-            }
+stage('Deploy to Azure') {
+    steps {
+        withCredentials([azureServicePrincipal(
+            credentialsId: 'azure-credentials', 
+            subscriptionIdVariable: 'AZURE_SUBSCRIPTION_ID', 
+            clientIdVariable: 'AZURE_CLIENT_ID', 
+            clientSecretVariable: 'AZURE_CLIENT_SECRET', 
+            tenantIdVariable: 'AZURE_TENANT_ID'
+        ), usernamePassword(
+            credentialsId: 'acr-credentials', 
+            usernameVariable: 'AZURE_ACR_USERNAME', 
+            passwordVariable: 'AZURE_ACR_PASSWORD'
+        )]) {
+            sh '''
+            az login --service-principal -u ${AZURE_CLIENT_ID} -p ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID}
+            
+            az webapp config container set \
+                --resource-group nodeapi_group  \
+                --name nodeapi \
+                --docker-custom-image-name myregistry.azurecr.io/nodejs-api \
+                --docker-registry-server-url https://nodeapi.azurecr.io \
+                --docker-registry-server-user ${AZURE_ACR_USERNAME} \
+                --docker-registry-server-password ${AZURE_ACR_PASSWORD}
+                
+            # Restart the web app to apply changes
+            az webapp restart --resource-group nodeapi_group --name nodeapi
+            '''
         }
     }
+}
 
-    post {
-        always {
-            cleanWs()
-        }
+
     }
 }
